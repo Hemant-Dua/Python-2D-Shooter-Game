@@ -9,7 +9,7 @@ Great as a beginner project to learn how games work in Python.
 ## ✅ Requirements
 
 - Python **3.10+**
-- Pygame (installed automatically)
+- Pygame **2.6.1** (installed automatically)
 
 ---
 
