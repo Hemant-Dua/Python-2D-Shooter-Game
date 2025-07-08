@@ -2,6 +2,14 @@ import pygame
 import random
 import math
 import time
+import sys
+import os
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_path)
 
 # Initialize Pygame
 pygame.init()
@@ -15,18 +23,18 @@ screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("Python 2D Shooter")
 
 # Load images
-player_image = pygame.image.load("Assets/sprites/player.webp")
+player_image = pygame.image.load(resource_path("Assets/sprites/player.webp"))
 player_image = pygame.transform.scale(player_image, (70, 70))
-spider_image = pygame.image.load("Assets/sprites/spider.png")
+spider_image = pygame.image.load(resource_path("Assets/sprites/spider.png"))
 spider_image = pygame.transform.scale(spider_image, (50, 50))
 
 #Sounds
-shoot_sound = pygame.mixer.Sound("Assets/sound/laser.mp3")
-pipe = pygame.mixer.Sound("Assets/sound/metal_pipe_meme.mp3")
-fart = pygame.mixer.Sound("Assets/sound/fart_meme.mp3")
-game_end = pygame.mixer.Sound("Assets/sound/GameEnd.mp3")
-damage = pygame.mixer.Sound("Assets/sound/damage.mp3")
-background_music = pygame.mixer.Sound("Assets/sound/bgScore.mp3")
+shoot_sound = pygame.mixer.Sound(resource_path("Assets/sound/laser.mp3"))
+pipe = pygame.mixer.Sound(resource_path("Assets/sound/metal_pipe_meme.mp3"))
+fart = pygame.mixer.Sound(resource_path("Assets/sound/fart_meme.mp3"))
+game_end = pygame.mixer.Sound(resource_path("Assets/sound/GameEnd.mp3"))
+damage = pygame.mixer.Sound(resource_path("Assets/sound/damage.mp3"))
+background_music = pygame.mixer.Sound(resource_path("Assets/sound/bgScore.mp3"))
 
 # Colors
 WHITE = (255, 255, 255)
@@ -47,7 +55,7 @@ def start_screen():
     for event in pygame.event.get():
       if event.type == pygame.QUIT:
         pygame.quit()
-        quit()
+        sys.exit()
       if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_SPACE:
           start_screen_active = False
@@ -197,26 +205,44 @@ def game_loop():
 
     return score
 
-# End Screen
 def end_screen(score):
     end_screen_active = True
     pipe.play()
+
+    # Define button dimensions
+    button_width, button_height = 150, 50
+    restart_button = pygame.Rect((width // 2 - 180, height // 2 + 80), (button_width, button_height))
+    quit_button = pygame.Rect((width // 2 + 30, height // 2 + 80), (button_width, button_height))
+
     while end_screen_active:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if restart_button.collidepoint(event.pos):
+                    end_screen_active = False  # Exit to main loop
+                    start_screen()
+                    final_score = game_loop()
+                    end_screen(final_score)
+                elif quit_button.collidepoint(event.pos):
+                    pygame.quit()
+                    sys.exit()
 
         screen.fill(BLACK)
         game_over_text = title.render("Game Over!", True, RED)
-        score_text = font.render("Your Score: " + str(score), True, WHITE)
-        game_over_rect = game_over_text.get_rect()
-        score_rect = score_text.get_rect()
-        game_over_rect.center = (width // 2, height // 2 - 30)
-        score_rect.center = (width // 2, height // 2 + 30)
-        screen.blit(game_over_text, game_over_rect)
-        screen.blit(score_text, score_rect)
+        score_text = font.render(f"Your Score: {score}", True, WHITE)
+        screen.blit(game_over_text, game_over_text.get_rect(center=(width // 2, height // 2 - 50)))
+        screen.blit(score_text, score_text.get_rect(center=(width // 2, height // 2)))
+
+        # Draw buttons
+        pygame.draw.rect(screen, GREEN, restart_button)
+        pygame.draw.rect(screen, RED, quit_button)
+        screen.blit(font.render("Restart", True, BLACK), restart_button.move(30, 10))
+        screen.blit(font.render("Quit", True, BLACK), quit_button.move(45, 10))
+
         pygame.display.update()
+
         
 
 # Main Game
@@ -224,8 +250,8 @@ if __name__ == "__main__":
     background_music.play(loops=-1)
     start_screen()
     final_score = game_loop()
-    background_music.stop()
     end_screen(final_score)
+    background_music.stop()
 
 # Quit Pygame
 pygame.quit()
